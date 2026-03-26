@@ -233,6 +233,7 @@ export interface TTSConfig {
   ttsLocation: string;
   showTTSBar: boolean;
   ttsHighlightOptions: TTSHighlightOptions;
+  ttsParagraphMode: boolean;
 }
 
 export interface TranslatorConfig {

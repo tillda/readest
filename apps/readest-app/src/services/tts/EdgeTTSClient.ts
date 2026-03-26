@@ -3,7 +3,7 @@ import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { EdgeSpeechTTS, EdgeTTSPayload, EDGE_TTS_PROTOCOL } from '@/libs/edgeTTS';
 import { TTSGranularity, TTSVoice, TTSVoicesGroup } from './types';
 import { AppService } from '@/types/system';
-import { parseSSMLMarks } from '@/utils/ssml';
+import { collapseMarksForParagraphMode, parseSSMLMarks } from '@/utils/ssml';
 import { TTSController } from './TTSController';
 import { TTSUtils } from './TTSUtils';
 
@@ -74,7 +74,11 @@ export class EdgeTTSClient implements TTSClient {
   };
 
   async *speak(ssml: string, signal: AbortSignal, preload = false) {
-    const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+    let { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+
+    if (this.controller?.ttsParagraphMode && marks.length > 0) {
+      marks = collapseMarksForParagraphMode(marks);
+    }
 
     if (preload) {
       // preload the first 2 marks immediately and the rest in the background

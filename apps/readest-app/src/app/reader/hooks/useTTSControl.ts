@@ -445,6 +445,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
+        ttsController.setParagraphMode(viewSettings.ttsParagraphMode ?? false);
         ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
         ttsController.setTargetLang(getTTSTargetLang() || '');
       }
@@ -599,6 +600,21 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     setViewSettings(bookKey, viewSettings);
   };
 
+  const handleToggleParagraphMode = useCallback(async () => {
+    const viewSettings = getViewSettings(bookKey)!;
+    const newValue = !(viewSettings.ttsParagraphMode ?? false);
+    viewSettings.ttsParagraphMode = newValue;
+    setViewSettings(bookKey, viewSettings);
+    const ttsController = ttsControllerRef.current;
+    if (ttsController) {
+      ttsController.setParagraphMode(newValue);
+      if (ttsController.state === 'playing') {
+        await ttsController.stop();
+        await ttsController.start();
+      }
+    }
+  }, [bookKey, getViewSettings, setViewSettings]);
+
   const refreshTtsLang = useCallback(() => {
     const speakingLang = ttsControllerRef.current?.getSpeakingLang();
     if (speakingLang) {
@@ -664,6 +680,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleGetVoiceId,
     handleSelectTimeout,
     handleToggleTTSBar,
+    handleToggleParagraphMode,
+    isParagraphMode: viewSettings?.ttsParagraphMode ?? false,
     handleBackToCurrentTTSLocation,
     refreshTtsLang,
   };

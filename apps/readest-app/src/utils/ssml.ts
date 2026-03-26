@@ -134,6 +134,20 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
   return result;
 };
 
+export const collapseMarksForParagraphMode = (marks: TTSMark[]): TTSMark[] => {
+  if (marks.length === 0) return [];
+  if (marks.length === 1) return marks;
+  const fullText = marks.map((m) => m.text).join('');
+  return [
+    {
+      offset: 0,
+      name: marks[0]!.name,
+      text: fullText,
+      language: marks[0]!.language,
+    },
+  ];
+};
+
 export const filterSSMLWithLang = (
   ssml: string,
   targetLang: string,

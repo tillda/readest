@@ -33,7 +33,8 @@ const TTSBar = ({
 }: TTSBarProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { hoveredBookKey, setHoveredBookKey } = useReaderStore();
+  const { hoveredBookKey, setHoveredBookKey, getViewSettings } = useReaderStore();
+  const isParagraphMode = getViewSettings(bookKey)?.ttsParagraphMode ?? false;
   const iconSize32 = useResponsiveSize(30);
   const iconSize48 = useResponsiveSize(36);
 
@@ -60,14 +61,16 @@ const TTSBar = ({
         >
           <MdFastRewind size={iconSize32} />
         </button>
-        <button
-          onClick={onBackward.bind(null, true)}
-          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-          title={_('Previous Sentence')}
-          aria-label={_('Previous Sentence')}
-        >
-          <MdSkipPrevious size={iconSize32} />
-        </button>
+        {!isParagraphMode && (
+          <button
+            onClick={onBackward.bind(null, true)}
+            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+            title={_('Previous Sentence')}
+            aria-label={_('Previous Sentence')}
+          >
+            <MdSkipPrevious size={iconSize32} />
+          </button>
+        )}
         <button
           onClick={onTogglePlay}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
@@ -76,14 +79,16 @@ const TTSBar = ({
         >
           {isPlaying ? <MdOutlinePause size={iconSize48} /> : <MdPlayArrow size={iconSize48} />}
         </button>
-        <button
-          onClick={onForward.bind(null, true)}
-          className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
-          title={_('Next Sentence')}
-          aria-label={_('Next Sentence')}
-        >
-          <MdSkipNext size={iconSize32} />
-        </button>
+        {!isParagraphMode && (
+          <button
+            onClick={onForward.bind(null, true)}
+            className='rounded-full p-1 transition-transform duration-200 hover:scale-105'
+            title={_('Next Sentence')}
+            aria-label={_('Next Sentence')}
+          >
+            <MdSkipNext size={iconSize32} />
+          </button>
+        )}
         <button
           onClick={onForward.bind(null, false)}
           className='rounded-full p-1 transition-transform duration-200 hover:scale-105'

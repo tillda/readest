@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { parseSSMLMarks } from '@/utils/ssml';
+import { collapseMarksForParagraphMode, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
 import { WEB_SPEECH_BLACKLISTED_VOICES } from './TTSData';
 import { TTSController } from './TTSController';
@@ -17,8 +17,7 @@ interface TTSBoundaryEvent {
 }
 
 async function* speakWithMarks(
-  ssml: string,
-  primaryLang: string,
+  marks: TTSMark[],
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
@@ -26,7 +25,6 @@ async function* speakWithMarks(
   setSpeakingLang: (lang: string) => void,
   dispatchSpeakMark: (mark: TTSMark) => void,
 ) {
-  const { marks } = parseSSMLMarks(ssml, primaryLang);
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance();
   for (const mark of marks) {
@@ -144,9 +142,13 @@ export class WebSpeechClient implements TTSClient {
     // no need to preload for web speech
     if (preload) return;
 
+    let { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+    if (this.controller?.ttsParagraphMode && marks.length > 0) {
+      marks = collapseMarksForParagraphMode(marks);
+    }
+
     for await (const ev of speakWithMarks(
-      ssml,
-      this.#primaryLang,
+      marks,
       () => this.#rate,
       () => this.#pitch,
       this.getWebSpeechVoiceFromLang,

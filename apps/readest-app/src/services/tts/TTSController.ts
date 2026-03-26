@@ -46,6 +46,7 @@ export class TTSController extends EventTarget {
   ttsEdgeVoices: TTSVoice[] = [];
   ttsNativeVoices: TTSVoice[] = [];
   ttsTargetLang: string = '';
+  ttsParagraphMode: boolean = false;
 
   options: TTSHighlightOptions = { style: 'highlight', color: 'gray' };
 
@@ -233,7 +234,11 @@ export class TTSController extends EventTarget {
       if (ssml) {
         const { marks } = parseSSMLMarks(ssml);
         if (marks.length > 0) {
-          this.dispatchSpeakMark(marks[0]);
+          if (this.ttsParagraphMode) {
+            this.dispatchParagraphHighlight(marks);
+          } else {
+            this.dispatchSpeakMark(marks[0]);
+          }
         }
       }
     }
@@ -332,6 +337,8 @@ export class TTSController extends EventTarget {
           if (!plainText || marks.length === 0) {
             resolve();
             return await this.forward();
+          } else if (this.ttsParagraphMode) {
+            this.dispatchParagraphHighlight(marks);
           } else {
             this.dispatchSpeakMark(marks[0]);
           }
@@ -440,7 +447,10 @@ export class TTSController extends EventTarget {
     await this.stop();
     if (!isPlaying) this.state = 'backward-paused';
 
-    const ssml = byMark ? this.view.tts?.prevMark(!isPlaying) : this.view.tts?.prev(!isPlaying);
+    const effectiveByMark = this.ttsParagraphMode ? false : byMark;
+    const ssml = effectiveByMark
+      ? this.view.tts?.prevMark(!isPlaying)
+      : this.view.tts?.prev(!isPlaying);
     if (!ssml) {
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
     } else {
@@ -455,7 +465,10 @@ export class TTSController extends EventTarget {
     await this.stop();
     if (!isPlaying) this.state = 'forward-paused';
 
-    const ssml = byMark ? this.view.tts?.nextMark(!isPlaying) : this.view.tts?.next(!isPlaying);
+    const effectiveByMark = this.ttsParagraphMode ? false : byMark;
+    const ssml = effectiveByMark
+      ? this.view.tts?.nextMark(!isPlaying)
+      : this.view.tts?.next(!isPlaying);
     if (!ssml) {
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForNextSection(), isPlaying);
     } else {
@@ -528,14 +541,50 @@ export class TTSController extends EventTarget {
     this.ttsTargetLang = lang;
   }
 
+  setParagraphMode(enabled: boolean) {
+    this.ttsParagraphMode = enabled;
+  }
+
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
+    if (this.ttsParagraphMode) {
+      // In paragraph mode, skip per-mark highlighting to preserve paragraph highlight
+      return;
+    }
     if (mark && mark.name !== '-1') {
       try {
         const range = this.view.tts?.setMark(mark.name);
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
       } catch {}
+    }
+  }
+
+  dispatchParagraphHighlight(marks: TTSMark[]) {
+    if (!marks.length) return;
+    const mergedText = marks.map((m) => m.text).join(' ');
+    this.dispatchEvent(
+      new CustomEvent('tts-speak-mark', {
+        detail: { ...marks[0], text: mergedText },
+      }),
+    );
+    try {
+      const firstRange = this.view.tts?.setMark(marks[0]!.name);
+      const lastRange =
+        marks.length > 1 ? this.view.tts?.setMark(marks[marks.length - 1]!.name) : firstRange;
+      if (firstRange && lastRange) {
+        const doc = firstRange.startContainer.ownerDocument;
+        if (doc) {
+          const combinedRange = doc.createRange();
+          combinedRange.setStart(firstRange.startContainer, firstRange.startOffset);
+          combinedRange.setEnd(lastRange.endContainer, lastRange.endOffset);
+          this.view.tts?.highlight(combinedRange);
+          const cfi = this.view.getCFI(this.#ttsSectionIndex, combinedRange);
+          this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to highlight paragraph range', e);
     }
   }
 

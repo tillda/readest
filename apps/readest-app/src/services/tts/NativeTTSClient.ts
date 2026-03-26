@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { addPluginListener, PluginListener } from '@tauri-apps/api/core';
 import { getUserLocale } from '@/utils/misc';
-import { parseSSMLMarks } from '@/utils/ssml';
+import { collapseMarksForParagraphMode, parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
@@ -178,7 +178,11 @@ export class NativeTTSClient implements TTSClient {
   }
 
   async *speak(ssml: string, signal: AbortSignal, preload: boolean = false) {
-    const { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+    let { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+
+    if (this.controller?.ttsParagraphMode && marks.length > 0 && !preload) {
+      marks = collapseMarksForParagraphMode(marks);
+    }
 
     for (const mark of marks) {
       if (!preload) this.controller?.dispatchSpeakMark(mark);
