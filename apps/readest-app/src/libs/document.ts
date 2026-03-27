@@ -198,10 +198,26 @@ export class DocumentLoader {
     if (!this.file.size) {
       throw new Error('File is empty');
     }
+    const isPdf = await this.isPDF();
+    const isZip = await this.isZip();
+    console.log(
+      '[DocumentLoader] isZip:',
+      isZip,
+      'isPDF:',
+      isPdf,
+      'file:',
+      this.file.name,
+      'size:',
+      this.file.size,
+    );
     try {
-      if (await this.isZip()) {
+      if (isZip) {
         const loader = await this.makeZipLoader();
         const { entries } = loader;
+        console.log(
+          '[DocumentLoader] zip entries:',
+          entries.map((e: { filename: string }) => e.filename).slice(0, 10),
+        );
 
         if (this.isCBZ()) {
           const { makeComicBook } = await import('foliate-js/comic-book.js');
@@ -218,7 +234,7 @@ export class DocumentLoader {
           book = await new EPUB(loader).init();
           format = 'EPUB';
         }
-      } else if (await this.isPDF()) {
+      } else if (isPdf) {
         const { makePDF } = await import('foliate-js/pdf.js');
         book = await makePDF(this.file);
         format = 'PDF';
@@ -249,6 +265,7 @@ export class DocumentLoader {
       }
       throw e;
     }
+    console.log('[DocumentLoader] detected format:', format, 'book:', book ? 'loaded' : 'null');
     return { book, format } as { book: BookDoc; format: BookFormat };
   }
 }

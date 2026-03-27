@@ -10,6 +10,7 @@ import { proofreadTransformer } from '@/services/transformers/proofread';
 import { useTranslation } from '@/hooks/useTranslation';
 import { TTSController, TTSMark, TTSHighlightOptions, TTSVoicesGroup } from '@/services/tts';
 import { TauriMediaSession } from '@/libs/mediaSession';
+import { useSettingsStore } from '@/store/settingsStore';
 import { eventDispatcher } from '@/utils/event';
 import { genSSMLRaw, parseSSMLLang } from '@/utils/ssml';
 import { throttle } from '@/utils/throttle';
@@ -26,9 +27,10 @@ interface UseTTSControlProps {
 
 export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProps) => {
   const _ = useTranslation();
-  const { appService } = useEnv();
+  const { appService, envConfig } = useEnv();
   const { user } = useAuth();
   const { isDarkMode } = useThemeStore();
+  const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
   const { getView, getProgress, getViewSettings } = useReaderStore();
   const { setViewSettings, setTTSEnabled } = useReaderStore();
@@ -600,11 +602,25 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     setViewSettings(bookKey, viewSettings);
   };
 
+  // Reactively sync paragraph mode from settings to the running TTS controller
+  useEffect(() => {
+    const ttsController = ttsControllerRef.current;
+    if (!ttsController) return;
+    const newValue = viewSettings?.ttsParagraphMode ?? true;
+    ttsController.setParagraphMode(newValue);
+    if (ttsController.state === 'playing') {
+      ttsController.stop().then(() => ttsController.start());
+    }
+  }, [viewSettings?.ttsParagraphMode]);
+
   const handleToggleParagraphMode = useCallback(async () => {
     const viewSettings = getViewSettings(bookKey)!;
     const newValue = !(viewSettings.ttsParagraphMode ?? false);
     viewSettings.ttsParagraphMode = newValue;
+    settings.globalViewSettings.ttsParagraphMode = newValue;
     setViewSettings(bookKey, viewSettings);
+    setSettings(settings);
+    saveSettings(envConfig, settings);
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       ttsController.setParagraphMode(newValue);
@@ -613,7 +629,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         await ttsController.start();
       }
     }
-  }, [bookKey, getViewSettings, setViewSettings]);
+  }, [bookKey, getViewSettings, setViewSettings, settings, setSettings, saveSettings, envConfig]);
 
   const refreshTtsLang = useCallback(() => {
     const speakingLang = ttsControllerRef.current?.getSpeakingLang();

@@ -1,6 +1,6 @@
 import { getUserLocale } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
-import { collapseMarksForParagraphMode, parseSSMLMarks } from '@/utils/ssml';
+import { collapseMarksForParagraphMode, findSSMLMark, parseSSMLMarks } from '@/utils/ssml';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
 import { WEB_SPEECH_BLACKLISTED_VOICES } from './TTSData';
 import { TTSController } from './TTSController';
@@ -18,12 +18,14 @@ interface TTSBoundaryEvent {
 
 async function* speakWithMarks(
   marks: TTSMark[],
+  originalMarks: TTSMark[],
   getRate: () => number,
   getPitch: () => number,
   getVoice: (lang: string) => Promise<SpeechSynthesisVoice | null>,
   setCurrentVoice: (voiceId: string) => void,
   setSpeakingLang: (lang: string) => void,
   dispatchSpeakMark: (mark: TTSMark) => void,
+  dispatchParagraphProgress: (mark: TTSMark) => void,
 ) {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance();
@@ -41,6 +43,22 @@ async function* speakWithMarks(
     if (voiceLang) {
       utterance.lang = voiceLang;
       setSpeakingLang(voiceLang);
+    }
+
+    if (originalMarks.length > 1) {
+      let lastTrackIdx = -1;
+      utterance.onboundary = (event) => {
+        const found = findSSMLMark(event.charIndex, originalMarks);
+        if (found) {
+          const idx = originalMarks.indexOf(found);
+          if (idx >= 0 && idx !== lastTrackIdx) {
+            lastTrackIdx = idx;
+            dispatchParagraphProgress(found);
+          }
+        }
+      };
+    } else {
+      utterance.onboundary = null;
     }
 
     yield {
@@ -143,18 +161,21 @@ export class WebSpeechClient implements TTSClient {
     if (preload) return;
 
     let { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+    const originalMarks = this.controller?.ttsParagraphMode && marks.length > 1 ? [...marks] : [];
     if (this.controller?.ttsParagraphMode && marks.length > 0) {
       marks = collapseMarksForParagraphMode(marks);
     }
 
     for await (const ev of speakWithMarks(
       marks,
+      originalMarks,
       () => this.#rate,
       () => this.#pitch,
       this.getWebSpeechVoiceFromLang,
       (voiceId) => (this.#currentVoiceId = voiceId),
       (lang) => (this.#speakingLang = lang),
       (mark) => this.controller?.dispatchSpeakMark(mark),
+      (mark) => this.controller?.dispatchParagraphProgress(mark),
     )) {
       if (signal.aborted) {
         console.log('TTS aborted');

@@ -230,8 +230,6 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
             onGetVoiceId={tts.handleGetVoiceId}
             onSelectTimeout={tts.handleSelectTimeout}
             onToogleTTSBar={tts.handleToggleTTSBar}
-            onToggleParagraphMode={tts.handleToggleParagraphMode}
-            isParagraphMode={tts.isParagraphMode}
           />
         </Popup>
       )}

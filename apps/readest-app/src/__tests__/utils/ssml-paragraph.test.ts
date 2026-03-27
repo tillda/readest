@@ -38,6 +38,15 @@ describe('collapseMarksForParagraphMode', () => {
     expect(result[0]!.text).toBe('Hello. Bonjour.');
   });
 
+  it('should add spaces between marks that lack whitespace', () => {
+    const marks: TTSMark[] = [
+      { offset: 0, name: '0', text: 'First sentence.', language: 'en' },
+      { offset: 16, name: '1', text: 'Second sentence.', language: 'en' },
+    ];
+    const result = collapseMarksForParagraphMode(marks);
+    expect(result[0]!.text).toBe('First sentence. Second sentence.');
+  });
+
   it('should preserve first mark name', () => {
     const marks: TTSMark[] = [
       { offset: 5, name: '3', text: 'First. ', language: 'en' },

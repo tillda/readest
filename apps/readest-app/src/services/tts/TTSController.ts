@@ -283,7 +283,7 @@ export class TTSController extends EventTarget {
     ssml = ssml
       .replace(/<emphasis[^>]*>([^<]+)<\/emphasis>/g, '$1')
       .replace(/[–—]/g, ',')
-      .replace('<break/>', ' ')
+      .replace(/<break\s*\/?>/g, ' ')
       .replace(/\.{3,}/g, '   ')
       .replace(/……/g, '  ')
       .replace(/\*/g, ' ')
@@ -557,6 +557,19 @@ export class TTSController extends EventTarget {
         const cfi = this.view.getCFI(this.#ttsSectionIndex, range);
         this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
       } catch {}
+    }
+  }
+
+  dispatchParagraphProgress(mark: TTSMark) {
+    if (!mark || mark.name === '-1') return;
+    try {
+      const markRange = this.view.tts?.getMarkRange(mark.name);
+      if (markRange) {
+        const cfi = this.view.getCFI(this.#ttsSectionIndex, markRange);
+        this.dispatchEvent(new CustomEvent('tts-highlight-mark', { detail: { cfi } }));
+      }
+    } catch {
+      /* ignore */
     }
   }
 

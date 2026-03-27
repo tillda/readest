@@ -294,7 +294,7 @@ export const DEFAULT_TTS_CONFIG: TTSConfig = {
   ttsLocation: '',
   showTTSBar: false,
   ttsHighlightOptions: { style: 'highlight', color: '#808080' },
-  ttsParagraphMode: false,
+  ttsParagraphMode: true,
 };
 
 export const DEFAULT_TRANSLATOR_CONFIG: TranslatorConfig = {

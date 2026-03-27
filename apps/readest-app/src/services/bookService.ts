@@ -446,7 +446,18 @@ export async function getBookFileSize(fs: FileSystem, book: Book): Promise<numbe
 export async function loadBookContent(fs: FileSystem, book: Book): Promise<BookContent> {
   let file: File;
   const fp = getLocalBookFilename(book);
-  if (await fs.exists(fp, 'Books')) {
+  const exists = await fs.exists(fp, 'Books');
+  console.log(
+    '[loadBookContent] fp:',
+    fp,
+    'exists:',
+    exists,
+    'book.format:',
+    book.format,
+    'book.title:',
+    book.title,
+  );
+  if (exists) {
     file = await fs.openFile(fp, 'Books');
   } else if (book.filePath) {
     file = await fs.openFile(book.filePath, 'None');

@@ -137,7 +137,7 @@ export const findSSMLMark = (charIndex: number, marks: TTSMark[]) => {
 export const collapseMarksForParagraphMode = (marks: TTSMark[]): TTSMark[] => {
   if (marks.length === 0) return [];
   if (marks.length === 1) return marks;
-  const fullText = marks.map((m) => m.text).join('');
+  const fullText = marks.map((m) => m.text.trim()).join(' ');
   return [
     {
       offset: 0,

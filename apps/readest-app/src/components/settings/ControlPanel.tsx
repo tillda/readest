@@ -49,6 +49,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
   const [isColorEink, setIsColorEink] = useState(viewSettings.isColorEink);
   const [autoScreenBrightness, setAutoScreenBrightness] = useState(settings.autoScreenBrightness);
   const [allowScript, setAllowScript] = useState(viewSettings.allowScript);
+  const [ttsParagraphMode, setTtsParagraphMode] = useState(viewSettings.ttsParagraphMode ?? true);
 
   const resetToDefaults = useResetViewSettings();
 
@@ -68,6 +69,7 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
       disableDoubleClick: setIsDisableDoubleClick,
       enableAnnotationQuickActions: setEnableAnnotationQuickActions,
       copyToNotebook: setCopyToNotebook,
+      ttsParagraphMode: setTtsParagraphMode,
     });
   };
 
@@ -199,6 +201,11 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
     saveViewSettings(envConfig, bookKey, 'copyToNotebook', copyToNotebook, false, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [copyToNotebook]);
+
+  useEffect(() => {
+    saveViewSettings(envConfig, bookKey, 'ttsParagraphMode', ttsParagraphMode, false, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ttsParagraphMode]);
 
   const getQuickActionOptions = () => {
     return [
@@ -379,6 +386,23 @@ const ControlPanel: React.FC<SettingsPanelPanelProp> = ({ bookKey, onRegisterRes
                 className='toggle'
                 checked={animated}
                 onChange={() => setAnimated(!animated)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='w-full' data-setting-id='settings.control.ttsParagraphMode'>
+        <h2 className='mb-2 font-medium'>{_('Text-to-Speech')}</h2>
+        <div className='card border-base-200 bg-base-100 border shadow'>
+          <div className='divide-base-200 divide-y'>
+            <div className='config-item'>
+              <span className=''>{_('Read by Paragraph')}</span>
+              <input
+                type='checkbox'
+                className='toggle'
+                checked={ttsParagraphMode}
+                onChange={() => setTtsParagraphMode(!ttsParagraphMode)}
               />
             </div>
           </div>

@@ -27,8 +27,6 @@ type TTSPanelProps = {
   onGetVoiceId: () => string;
   onSelectTimeout: (bookKey: string, value: number) => void;
   onToogleTTSBar: () => void;
-  onToggleParagraphMode: () => void;
-  isParagraphMode: boolean;
 };
 
 const getTTSTimeoutOptions = (_: TranslationFunc) => {
@@ -118,8 +116,6 @@ const TTSPanel = ({
   onGetVoiceId,
   onSelectTimeout,
   onToogleTTSBar,
-  onToggleParagraphMode,
-  isParagraphMode,
 }: TTSPanelProps) => {
   const _ = useTranslation();
   const { envConfig } = useEnv();
@@ -236,17 +232,6 @@ const TTSPanel = ({
           <span className='text-center'></span>
           <span className='text-center'>{_('Fast')}</span>
         </div>
-      </div>
-      <div className='flex w-full items-center justify-end px-1'>
-        <label className='label cursor-pointer gap-1.5'>
-          <span className='text-xs opacity-70'>{_('Read by Paragraph')}</span>
-          <input
-            type='checkbox'
-            className='toggle toggle-xs toggle-primary'
-            checked={isParagraphMode}
-            onChange={onToggleParagraphMode}
-          />
-        </label>
       </div>
       <div className='flex items-center justify-between space-x-2'>
         <button

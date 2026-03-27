@@ -75,6 +75,7 @@ export class EdgeTTSClient implements TTSClient {
 
   async *speak(ssml: string, signal: AbortSignal, preload = false) {
     let { marks } = parseSSMLMarks(ssml, this.#primaryLang);
+    const originalMarks = this.controller?.ttsParagraphMode && marks.length > 1 ? [...marks] : [];
 
     if (this.controller?.ttsParagraphMode && marks.length > 0) {
       marks = collapseMarksForParagraphMode(marks);
@@ -153,6 +154,7 @@ export class EdgeTTSClient implements TTSClient {
           const cleanUp = () => {
             audio.onended = null;
             audio.onerror = null;
+            audio.ontimeupdate = null;
             audio.src = '';
           };
           let resolved = false;
@@ -184,6 +186,26 @@ export class EdgeTTSClient implements TTSClient {
           if (!this.appService?.isLinuxApp) {
             audio.playbackRate = this.#rate;
           }
+
+          if (originalMarks.length > 1) {
+            let lastTrackIdx = -1;
+            const cumLengths: number[] = [];
+            let cum = 0;
+            for (const m of originalMarks) {
+              cum += m.text.trim().length + 1;
+              cumLengths.push(cum);
+            }
+            audio.ontimeupdate = () => {
+              if (!audio.duration || !isFinite(audio.duration)) return;
+              const charPos = Math.floor((audio.currentTime / audio.duration) * cum);
+              const idx = cumLengths.findIndex((len) => charPos < len);
+              if (idx >= 0 && idx !== lastTrackIdx) {
+                lastTrackIdx = idx;
+                this.controller?.dispatchParagraphProgress(originalMarks[idx]!);
+              }
+            };
+          }
+
           audio
             .play()
             .then(() => {
