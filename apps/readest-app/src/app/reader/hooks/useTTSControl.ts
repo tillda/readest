@@ -32,8 +32,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   const { isDarkMode } = useThemeStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const { getBookData } = useBookDataStore();
-  const { getView, getProgress, getViewSettings } = useReaderStore();
-  const { setViewSettings, setTTSEnabled } = useReaderStore();
+  const { getView, getProgress, getViewSettings, getViewState } = useReaderStore();
+  const { setViewSettings, setTTSEnabled, clearLastSelection } = useReaderStore();
   const { getMergedRules } = useProofreadStore();
 
   const [ttsLang, setTtsLang] = useState<string>('en');
@@ -371,19 +371,20 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     const ttsSpeakRange = range as Range | null;
     let ttsFromRange = ttsSpeakRange;
     let ttsFromIndex = typeof index === 'number' ? index : null;
-    if (!ttsFromRange && viewSettings.ttsLocation) {
-      const ttsCfi = viewSettings.ttsLocation;
-      if (isCfiInLocation(ttsCfi, location)) {
-        const { index, anchor } = view.resolveCFI(ttsCfi);
-        const { doc } = view.renderer.getContents().find((x) => x.index === index) || {};
-        if (doc) {
-          ttsFromRange = anchor(doc);
-          ttsFromIndex = index;
-        }
-      }
+    // Use last user selection as fallback (the paragraph they clicked on)
+    const viewState = getViewState(bookKey);
+    if (
+      !ttsFromRange &&
+      viewState?.lastSelectionRange != null &&
+      viewState?.lastSelectionIndex != null
+    ) {
+      ttsFromRange = viewState.lastSelectionRange;
+      ttsFromIndex = viewState.lastSelectionIndex;
     }
+    clearLastSelection(bookKey);
 
-    if (!ttsFromIndex) {
+    // Fall back to current reading position
+    if (ttsFromIndex == null) {
       ttsFromIndex = progress.index;
     }
 
@@ -438,8 +439,8 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         oneTime && ttsSpeakRange
           ? genSSMLRaw(ttsSpeakRange.toString().trim())
           : ttsFromRange
-            ? view.tts?.from(ttsFromRange)
-            : view.tts?.start();
+            ? ttsController.blockFromRange(ttsFromRange)
+            : ttsController.startBlock();
       if (ssml) {
         const lang = parseSSMLLang(ssml, primaryLang) || 'en';
         setIsPlaying(true);
@@ -447,7 +448,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
         ttsController.setLang(lang);
         ttsController.setRate(viewSettings.ttsRate);
-        ttsController.setParagraphMode(viewSettings.ttsParagraphMode ?? false);
+        ttsController.setParagraphMode(viewSettings.ttsParagraphMode ?? true);
         ttsController.speak(ssml, oneTime, () => handleStop(bookKey));
         ttsController.setTargetLang(getTTSTargetLang() || '');
       }
@@ -615,7 +616,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const handleToggleParagraphMode = useCallback(async () => {
     const viewSettings = getViewSettings(bookKey)!;
-    const newValue = !(viewSettings.ttsParagraphMode ?? false);
+    const newValue = !(viewSettings.ttsParagraphMode ?? true);
     viewSettings.ttsParagraphMode = newValue;
     settings.globalViewSettings.ttsParagraphMode = newValue;
     setViewSettings(bookKey, viewSettings);
@@ -697,7 +698,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     handleSelectTimeout,
     handleToggleTTSBar,
     handleToggleParagraphMode,
-    isParagraphMode: viewSettings?.ttsParagraphMode ?? false,
+    isParagraphMode: viewSettings?.ttsParagraphMode ?? true,
     handleBackToCurrentTTSLocation,
     refreshTtsLang,
   };

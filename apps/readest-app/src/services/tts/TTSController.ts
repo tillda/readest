@@ -124,6 +124,7 @@ export class TTSController extends EventTarget {
         const { style, color } = this.options;
         overlayer?.remove(HIGHLIGHT_KEY);
         overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
+        console.log('TTS overlay:', visibleRange.toString());
       } catch (e) {
         console.error('Failed to highlight range', e);
       }
@@ -247,9 +248,9 @@ export class TTSController extends EventTarget {
   async #handleNavigationWithoutSSML(initSection: () => Promise<boolean>, isPlaying: boolean) {
     if (await initSection()) {
       if (isPlaying) {
-        this.#speak(this.view.tts?.start());
+        this.#speak(this.startBlock());
       } else {
-        this.view.tts?.start();
+        this.startBlock();
       }
     } else {
       await this.stop();
@@ -266,15 +267,19 @@ export class TTSController extends EventTarget {
     const tts = this.view.tts;
     if (!tts) return;
 
+    const savedRanges = tts.getRanges();
     const ssmls: string[] = [];
     for (let i = 0; i < count; i++) {
-      const ssml = await this.#preprocessSSML(tts.next());
+      const rawSsml = this.nextBlock();
+      tts.setRanges(savedRanges);
+      const ssml = await this.#preprocessSSML(rawSsml);
       if (!ssml) break;
       ssmls.push(ssml);
     }
     for (let i = 0; i < ssmls.length; i++) {
-      tts.prev();
+      this.prevBlock();
     }
+    tts.setRanges(savedRanges);
     await Promise.all(ssmls.map((ssml) => this.preloadSSML(ssml, new AbortController().signal)));
   }
 
@@ -333,6 +338,14 @@ export class TTSController extends EventTarget {
         }
 
         const { plainText, marks } = parseSSMLMarks(ssml);
+        console.log(
+          'TTS paragraph:',
+          this.ttsParagraphMode ? 'ON' : 'OFF',
+          'marks:',
+          marks.length,
+          'text:',
+          plainText,
+        );
         if (!oneTime) {
           if (!plainText || marks.length === 0) {
             resolve();
@@ -345,6 +358,7 @@ export class TTSController extends EventTarget {
           await this.preloadSSML(ssml, signal);
         }
         const iter = await this.ttsClient.speak(ssml, signal);
+        console.log('TTS API input:', plainText);
         let lastCode;
         for await (const { code } of iter) {
           if (signal.aborted) {
@@ -401,7 +415,7 @@ export class TTSController extends EventTarget {
 
   async start() {
     await this.initViewTTS();
-    const ssml = this.state.includes('paused') ? this.view.tts?.resume() : this.view.tts?.start();
+    const ssml = this.state.includes('paused') ? this.resumeBlock() : this.startBlock();
     if (this.state.includes('paused')) {
       this.resume();
     }
@@ -448,9 +462,7 @@ export class TTSController extends EventTarget {
     if (!isPlaying) this.state = 'backward-paused';
 
     const effectiveByMark = this.ttsParagraphMode ? false : byMark;
-    const ssml = effectiveByMark
-      ? this.view.tts?.prevMark(!isPlaying)
-      : this.view.tts?.prev(!isPlaying);
+    const ssml = effectiveByMark ? this.prevMark(!isPlaying) : this.prevBlock(!isPlaying);
     if (!ssml) {
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForPrevSection(), isPlaying);
     } else {
@@ -466,9 +478,7 @@ export class TTSController extends EventTarget {
     if (!isPlaying) this.state = 'forward-paused';
 
     const effectiveByMark = this.ttsParagraphMode ? false : byMark;
-    const ssml = effectiveByMark
-      ? this.view.tts?.nextMark(!isPlaying)
-      : this.view.tts?.next(!isPlaying);
+    const ssml = effectiveByMark ? this.nextMark(!isPlaying) : this.nextBlock(!isPlaying);
     if (!ssml) {
       await this.#handleNavigationWithoutSSML(() => this.#initTTSForNextSection(), isPlaying);
     } else {
@@ -545,6 +555,38 @@ export class TTSController extends EventTarget {
     this.ttsParagraphMode = enabled;
   }
 
+  // --- Block navigation abstraction ---
+  // These wrap foliate-js TTS navigation. Currently 1:1 with foliate-js blocks.
+  // Future: merge multiple foliate-js blocks for better prosody.
+
+  startBlock(): string | undefined {
+    return this.view.tts?.start();
+  }
+
+  resumeBlock(): string | undefined {
+    return this.view.tts?.resume();
+  }
+
+  nextBlock(paused?: boolean): string | undefined {
+    return this.view.tts?.next(paused);
+  }
+
+  prevBlock(paused?: boolean): string | undefined {
+    return this.view.tts?.prev(paused);
+  }
+
+  nextMark(paused?: boolean): string | undefined {
+    return this.view.tts?.nextMark(paused);
+  }
+
+  prevMark(paused?: boolean): string | undefined {
+    return this.view.tts?.prevMark(paused);
+  }
+
+  blockFromRange(range: Range): string | undefined {
+    return this.view.tts?.from(range);
+  }
+
   dispatchSpeakMark(mark?: TTSMark) {
     this.dispatchEvent(new CustomEvent('tts-speak-mark', { detail: mark || { text: '' } }));
     if (this.ttsParagraphMode) {
@@ -575,6 +617,17 @@ export class TTSController extends EventTarget {
 
   dispatchParagraphHighlight(marks: TTSMark[]) {
     if (!marks.length) return;
+    console.log(
+      'TTS highlight paragraph:',
+      marks.length,
+      'marks,',
+      'first:',
+      marks[0]?.name,
+      'last:',
+      marks[marks.length - 1]?.name,
+      'text:',
+      marks.map((m) => m.text).join(' '),
+    );
     const mergedText = marks.map((m) => m.text).join(' ');
     this.dispatchEvent(
       new CustomEvent('tts-speak-mark', {
@@ -582,9 +635,9 @@ export class TTSController extends EventTarget {
       }),
     );
     try {
-      const firstRange = this.view.tts?.setMark(marks[0]!.name);
+      const firstRange = this.view.tts?.getMarkRange(marks[0]!.name);
       const lastRange =
-        marks.length > 1 ? this.view.tts?.setMark(marks[marks.length - 1]!.name) : firstRange;
+        marks.length > 1 ? this.view.tts?.getMarkRange(marks[marks.length - 1]!.name) : firstRange;
       if (firstRange && lastRange) {
         const doc = firstRange.startContainer.ownerDocument;
         if (doc) {

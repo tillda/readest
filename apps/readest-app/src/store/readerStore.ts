@@ -34,6 +34,8 @@ interface ViewState {
   progress: BookProgress | null;
   ribbonVisible: boolean;
   ttsEnabled: boolean;
+  lastSelectionRange: Range | null;
+  lastSelectionIndex: number | null;
   syncing: boolean;
   gridInsets: Insets | null;
   /* View settings for the view: 
@@ -80,6 +82,8 @@ interface ReaderStore {
   clearViewState: (key: string) => void;
   getViewState: (key: string) => ViewState | null;
   getGridInsets: (key: string) => Insets | null;
+  setLastSelection: (key: string, range: Range, index: number) => void;
+  clearLastSelection: (key: string) => void;
   setGridInsets: (key: string, insets: Insets | null) => void;
   setViewInited: (key: string, inited: boolean) => void;
   recreateViewer: (envConfig: EnvConfigType, key: string) => void;
@@ -138,6 +142,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
           progress: null,
           ribbonVisible: false,
           ttsEnabled: false,
+          lastSelectionRange: null,
+          lastSelectionIndex: null,
           syncing: false,
           gridInsets: null,
           viewSettings: null,
@@ -241,6 +247,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             progress: null,
             ribbonVisible: false,
             ttsEnabled: false,
+            lastSelectionRange: null,
+            lastSelectionIndex: null,
             syncing: false,
             gridInsets: null,
             viewSettings: { ...globalViewSettings, ...configViewSettings },
@@ -264,6 +272,8 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             progress: null,
             ribbonVisible: false,
             ttsEnabled: false,
+            lastSelectionRange: null,
+            lastSelectionIndex: null,
             syncing: false,
             gridInsets: null,
             viewSettings: null,
@@ -412,6 +422,30 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
         [key]: {
           ...state.viewStates[key]!,
           ttsEnabled: enabled,
+        },
+      },
+    })),
+
+  setLastSelection: (key: string, range: Range, index: number) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          lastSelectionRange: range,
+          lastSelectionIndex: index,
+        },
+      },
+    })),
+
+  clearLastSelection: (key: string) =>
+    set((state) => ({
+      viewStates: {
+        ...state.viewStates,
+        [key]: {
+          ...state.viewStates[key]!,
+          lastSelectionRange: null,
+          lastSelectionIndex: null,
         },
       },
     })),

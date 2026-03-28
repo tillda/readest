@@ -47,7 +47,8 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   const { settings } = useSettingsStore();
   const { isDarkMode } = useThemeStore();
   const { getConfig, saveConfig, getBookData, updateBooknotes } = useBookDataStore();
-  const { getProgress, getView, getViewsById, getViewSettings } = useReaderStore();
+  const { getProgress, getView, getViewsById, getViewSettings, setLastSelection } =
+    useReaderStore();
   const { setNotebookVisible, setNotebookNewAnnotation } = useNotebookStore();
   const { listenToNativeTouchEvents } = useDeviceControlStore();
 
@@ -430,6 +431,14 @@ const Annotator: React.FC<{ bookKey: string }> = ({ bookKey }) => {
   };
 
   useFoliateEvents(view, { onLoad, onCreateOverlay, onDrawAnnotation, onShowAnnotation });
+
+  // Save last selection to reader store for TTS start position
+  useEffect(() => {
+    if (selection?.range && selection?.index != null) {
+      setLastSelection(bookKey, selection.range, selection.index);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selection]);
 
   useEffect(() => {
     handleShowPopup(showingPopup);
