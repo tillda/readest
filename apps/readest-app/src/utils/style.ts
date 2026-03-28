@@ -550,7 +550,7 @@ export const getThemeCode = () => {
   let themeColor = 'default';
   let systemIsDarkMode = false;
   let customThemes: CustomTheme[] = [];
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function') {
     themeColor = localStorage.getItem('themeColor') || 'default';
     themeMode = localStorage.getItem('themeMode') || 'auto';
     customThemes = JSON.parse(localStorage.getItem('customThemes') || '[]');

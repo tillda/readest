@@ -44,14 +44,14 @@ interface ThemeState {
 }
 
 const getInitialThemeMode = (): ThemeMode => {
-  if (typeof window !== 'undefined' && localStorage) {
+  if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function') {
     return (localStorage.getItem('themeMode') as ThemeMode) || 'auto';
   }
   return 'auto';
 };
 
 const getInitialThemeColor = (): string => {
-  if (typeof window !== 'undefined' && localStorage) {
+  if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function') {
     const defaultColor = window.__READEST_IS_EINK ? 'contrast' : 'default';
     return localStorage.getItem('themeColor') || defaultColor;
   }

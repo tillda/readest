@@ -15,15 +15,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const hasLocalStorage = () => typeof localStorage?.getItem === 'function';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && hasLocalStorage()) {
       return localStorage.getItem('token');
     }
     return null;
   });
   const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && hasLocalStorage()) {
       const userJson = localStorage.getItem('user');
       return userJson ? JSON.parse(userJson) : null;
     }
@@ -37,16 +39,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session) {
         console.log('Syncing session');
         const { access_token, refresh_token, user } = session;
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
-        localStorage.setItem('user', JSON.stringify(user));
+        if (hasLocalStorage()) {
+          localStorage.setItem('token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
+          localStorage.setItem('user', JSON.stringify(user));
+        }
         posthog.identify(user.id);
         setToken(access_token);
         setUser(user);
       } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        if (hasLocalStorage()) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+        }
         setToken(null);
         setUser(null);
       }
@@ -73,8 +79,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('Logging in');
     setToken(newToken);
     setUser(newUser);
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    if (hasLocalStorage()) {
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('user', JSON.stringify(newUser));
+    }
   };
 
   const logout = async () => {
@@ -84,8 +92,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
     } finally {
       await supabase.auth.signOut();
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      if (hasLocalStorage()) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
       setToken(null);
       setUser(null);
     }
