@@ -68,6 +68,10 @@ See [docs/i18n.md](docs/i18n.md) for the key-as-content translation approach, `s
 
 See [docs/safe-area-insets.md](docs/safe-area-insets.md) for rules on handling top/bottom insets for UI elements near screen edges.
 
+### Text-to-Speech (TTS)
+
+TTS is a **main feature** of the app — other features may be deprioritized to keep TTS working well. See [docs/text-to-speech-md](docs/text-to-speech-md) for the full architecture document covering pluggable providers, SSML vs plain text, block granularity, preprocessing, and seamless playback. All code changes must be compatible with the TTS requirements described there.
+
 ## Web Browsing & QA (gstack)
 
 For all web browsing, QA testing, and site interaction, use the `/browse` skill from gstack. **Never use `mcp__claude-in-chrome__*` tools directly.**
