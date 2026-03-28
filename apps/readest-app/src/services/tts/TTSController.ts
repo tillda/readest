@@ -24,6 +24,15 @@ type TTSState =
 const HIGHLIGHT_KEY = 'tts-highlight';
 
 export class TTSController extends EventTarget {
+  // Static lookup map avoids dynamic bracket access on imported class (Turbopack compat)
+  static #overlayerDrawFns: Record<TTSHighlightOptions['style'], typeof Overlayer.highlight> = {
+    highlight: Overlayer.highlight,
+    underline: Overlayer.underline,
+    strikethrough: Overlayer.strikethrough,
+    squiggly: Overlayer.squiggly,
+    outline: Overlayer.outline,
+  };
+
   appService: AppService | null = null;
   view: FoliateView;
   isAuthenticated: boolean = false;
@@ -122,8 +131,9 @@ export class TTSController extends EventTarget {
         const cfi = this.view.getCFI(index, range);
         const visibleRange = this.view.resolveCFI(cfi).anchor(doc);
         const { style, color } = this.options;
+        const drawFn = TTSController.#overlayerDrawFns[style];
         overlayer?.remove(HIGHLIGHT_KEY);
-        overlayer?.add(HIGHLIGHT_KEY, visibleRange, Overlayer[style], { color });
+        if (drawFn) overlayer?.add(HIGHLIGHT_KEY, visibleRange, drawFn, { color });
         console.log('TTS overlay:', visibleRange.toString());
       } catch (e) {
         console.error('Failed to highlight range', e);
