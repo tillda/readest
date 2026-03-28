@@ -1,0 +1,39 @@
+# Text-to-speec Docs of the app
+
+The text to speech (reading out the text) is one of the MAIN features of the app. It is very important. Up to the point where some other features might be suboptimal in order for the TTS to work great.
+
+Here is overview of all the wanted features and architectural decisions. Not all has to be implemented right now, but we should be aware of these when coding anyting new.
+
+## API
+
+Main design choice: pluggability of API endpoint
+
+Original app uses EdgeTTS. The landscape of AI TTS models is expanding. We need to have a simple way to change the TTS provider. It might be one of the big tech's one, or some minor.
+
+## User specified endpoint
+
+In the future, we want to be able tu run our own LLM to generate audio. This is extremely important for coporate use or in order to avoid copyright infringment.
+
+## Speech synthesis vs. generative models
+
+Some API use generative models, some use normal speech synthesis. Our architecture must be able to use both.
+
+The difference is that current generative models are not able to use any SSML (Speech Synthesis Markup Language), but just take the plain text. So our common ground is only a plain text. SSML *can* be used somewhere, but be aware that some API might not understand it and we might have processing layer that strips it.
+
+However if we have SSML data, it MIGHT be usefull in the future, as LLMs improve. So the app should treat SSML-anotated text as one possibility of use and plaintext as the other. Specific thin provider wrapepr should decide what to use for the API call.
+
+## Granularity of TTS - sentences, paragraphs, sections
+
+Especially when using LLMs, it is best to generate audio per bigger blocks - paragraphs or short sections. This way the model generates narration with better prosody and content. Therefore the code must accomodate a possibility of chunking text to one paragraph, or 1-10 paragraphs, or shorter section (like 3rd level heading and following paragraphs to another 3rd level headings).
+
+This might change in the future.
+
+## Pre-processing before TTS
+
+There will be some preprocessing before the text is sent to API. This way we can better pronounce some bits.
+
+## Seamless and continuation
+
+The audio must play well and seamlessly, especially on mobile platforms.
+
+Pages should turn automatically when narrating, but this does not have to be absolutely perfect.
