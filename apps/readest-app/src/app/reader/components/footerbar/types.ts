@@ -8,6 +8,7 @@ export interface FooterBarProps {
   pageinfo?: PageInfo;
   isHoveredAnim: boolean;
   gridInsets: Insets;
+  isVisible?: boolean;
 }
 
 export interface NavigationHandlers {

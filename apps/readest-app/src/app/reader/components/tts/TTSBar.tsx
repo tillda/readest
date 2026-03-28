@@ -21,6 +21,7 @@ type TTSBarProps = {
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
   gridInsets: Insets;
+  isVisible?: boolean;
 };
 
 const TTSBar = ({
@@ -30,6 +31,7 @@ const TTSBar = ({
   onBackward,
   onForward,
   gridInsets,
+  isVisible: isVisibleProp,
 }: TTSBarProps) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -38,7 +40,8 @@ const TTSBar = ({
   const iconSize32 = useResponsiveSize(30);
   const iconSize48 = useResponsiveSize(36);
 
-  const isVisible = hoveredBookKey !== bookKey;
+  // Use isVisible prop from ReaderControls when provided, otherwise fall back to original inverted logic
+  const isVisible = isVisibleProp ?? hoveredBookKey !== bookKey;
 
   return (
     <div

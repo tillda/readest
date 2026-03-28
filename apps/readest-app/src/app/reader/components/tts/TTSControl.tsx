@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useEnv } from '@/context/EnvContext';
 import { useThemeStore } from '@/store/themeStore';
 import { useReaderStore } from '@/store/readerStore';
@@ -18,12 +18,63 @@ const POPUP_WIDTH = 282;
 const POPUP_HEIGHT = 160;
 const POPUP_PADDING = 10;
 
-interface TTSControlProps {
+/**
+ * Props shared by both managed and standalone modes.
+ */
+interface TTSControlBaseProps {
   bookKey: string;
   gridInsets: Insets;
 }
 
-const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
+/**
+ * When externally managed by ReaderControls, tts object and visibility props are provided.
+ */
+interface TTSControlManagedProps extends TTSControlBaseProps {
+  tts: ReturnType<typeof useTTSControl>;
+  showPanel: boolean;
+  setShowPanel: (show: boolean) => void;
+  isIconVisible: boolean;
+  isBarVisible: boolean;
+  isBackToTTSVisible: boolean;
+}
+
+/**
+ * Standalone mode: TTSControl manages its own useTTSControl hook.
+ */
+interface TTSControlStandaloneProps extends TTSControlBaseProps {
+  tts?: undefined;
+  showPanel?: undefined;
+  setShowPanel?: undefined;
+  isIconVisible?: undefined;
+  isBarVisible?: undefined;
+  isBackToTTSVisible?: undefined;
+}
+
+type TTSControlProps = TTSControlManagedProps | TTSControlStandaloneProps;
+
+/**
+ * Inner component that renders TTS UI. Does NOT call useTTSControl.
+ * Receives all TTS state/handlers via props.
+ */
+const TTSControlInner: React.FC<{
+  bookKey: string;
+  gridInsets: Insets;
+  tts: ReturnType<typeof useTTSControl>;
+  showPanel: boolean;
+  setShowPanel: (show: boolean) => void;
+  isIconVisible: boolean;
+  isBarVisible: boolean;
+  isBackToTTSVisible: boolean;
+}> = ({
+  bookKey,
+  gridInsets,
+  tts,
+  showPanel,
+  setShowPanel,
+  isIconVisible,
+  isBarVisible,
+  isBackToTTSVisible,
+}) => {
   const _ = useTranslation();
   const { appService } = useEnv();
   const { safeAreaInsets } = useThemeStore();
@@ -31,14 +82,11 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
 
   const viewSettings = getViewSettings(bookKey);
 
-  const [showPanel, setShowPanel] = useState(false);
   const [panelPosition, setPanelPosition] = useState<Position>();
   const [trianglePosition, setTrianglePosition] = useState<Position>();
 
   const iconRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const backButtonTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showIndicatorWithinTimeout, setShowIndicatorWithinTimeout] = useState(true);
 
   const [shouldMountBackButton, setShouldMountBackButton] = useState(false);
   const [isBackButtonVisible, setIsBackButtonVisible] = useState(false);
@@ -48,13 +96,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
   const popupWidth = Math.min(maxWidth, useResponsiveSize(POPUP_WIDTH));
   const popupHeight = useResponsiveSize(POPUP_HEIGHT);
 
-  const tts = useTTSControl({
-    bookKey,
-    onRequestHidePanel: () => setShowPanel(false),
-  });
-
+  // Back button mount/unmount animation
   useEffect(() => {
-    if (tts.showBackToCurrentTTSLocation) {
+    if (isBackToTTSVisible) {
       setShouldMountBackButton(true);
       const fadeInTimeout = setTimeout(() => {
         setIsBackButtonVisible(true);
@@ -70,8 +114,9 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
       }, 300);
       return;
     }
-  }, [tts.showBackToCurrentTTSLocation]);
+  }, [isBackToTTSVisible]);
 
+  // Panel resize observer
   useEffect(() => {
     if (!iconRef.current || !showPanel) return;
     const parentElement = iconRef.current.parentElement;
@@ -87,39 +132,12 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPanel]);
 
-  useEffect(() => {
-    if (hoveredBookKey) {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-      const showTimeout = setTimeout(() => {
-        setShowIndicatorWithinTimeout(true);
-      }, 100);
-      hoverTimeoutRef.current = showTimeout;
-    } else {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-      const hideTimeout = setTimeout(() => {
-        setShowIndicatorWithinTimeout(false);
-      }, 5000);
-      hoverTimeoutRef.current = hideTimeout;
-    }
-
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, [hoveredBookKey]);
-
+  // Close panel when TTS bar is toggled on
   useEffect(() => {
     if (tts.showTTSBar) {
       setShowPanel(false);
     }
-  }, [tts.showTTSBar]);
+  }, [tts.showTTSBar, setShowPanel]);
 
   const updatePanelPosition = () => {
     if (iconRef.current) {
@@ -151,7 +169,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
     if (!showPanel && tts.isTTSActive) {
       tts.refreshTtsLang();
     }
-    setShowPanel((prev) => !prev);
+    setShowPanel(!showPanel);
   };
 
   const handleDismissPopup = () => {
@@ -184,7 +202,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
         </div>
       )}
       {showPanel && <Overlay onDismiss={handleDismissPopup} />}
-      {(showPanel || (tts.showIndicator && showIndicatorWithinTimeout)) && (
+      {isIconVisible && (
         <div
           ref={iconRef}
           className={clsx(
@@ -233,7 +251,7 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           />
         </Popup>
       )}
-      {tts.showIndicator && tts.showTTSBar && tts.ttsClientsInited && (
+      {isBarVisible && (
         <TTSBar
           bookKey={bookKey}
           isPlaying={tts.isPlaying}
@@ -241,9 +259,87 @@ const TTSControl: React.FC<TTSControlProps> = ({ bookKey, gridInsets }) => {
           onTogglePlay={tts.handleTogglePlay}
           onForward={tts.handleForward}
           gridInsets={gridInsets}
+          isVisible={true}
         />
       )}
     </>
+  );
+};
+
+/**
+ * TTSControl: when `tts` prop is provided (managed mode from ReaderControls),
+ * renders directly. When not provided (standalone/legacy mode), calls useTTSControl
+ * internally and computes visibility using the original hover-based logic.
+ */
+const TTSControl: React.FC<TTSControlProps> = (props) => {
+  if (props.tts !== undefined) {
+    // Managed mode: tts and visibility provided by ReaderControls
+    return <TTSControlInner {...props} />;
+  }
+
+  // Standalone mode: manage our own TTS hook
+  return <TTSControlStandalone bookKey={props.bookKey} gridInsets={props.gridInsets} />;
+};
+
+/**
+ * Standalone wrapper that calls useTTSControl and computes visibility using original logic.
+ */
+const TTSControlStandalone: React.FC<TTSControlBaseProps> = ({ bookKey, gridInsets }) => {
+  const { hoveredBookKey } = useReaderStore();
+
+  const [showPanel, setShowPanel] = useState(false);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showIndicatorWithinTimeout, setShowIndicatorWithinTimeout] = useState(true);
+
+  const tts = useTTSControl({
+    bookKey,
+    onRequestHidePanel: () => setShowPanel(false),
+  });
+
+  // Original hover timeout logic for indicator visibility
+  useEffect(() => {
+    if (hoveredBookKey) {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      const showTimeout = setTimeout(() => {
+        setShowIndicatorWithinTimeout(true);
+      }, 100);
+      hoverTimeoutRef.current = showTimeout;
+    } else {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+      const hideTimeout = setTimeout(() => {
+        setShowIndicatorWithinTimeout(false);
+      }, 5000);
+      hoverTimeoutRef.current = hideTimeout;
+    }
+
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
+  }, [hoveredBookKey]);
+
+  const isIconVisible = showPanel || (tts.showIndicator && showIndicatorWithinTimeout);
+  const isBarVisible = tts.showIndicator && tts.showTTSBar && tts.ttsClientsInited;
+  const isBackToTTSVisible = tts.showBackToCurrentTTSLocation;
+
+  return (
+    <TTSControlInner
+      bookKey={bookKey}
+      gridInsets={gridInsets}
+      tts={tts}
+      showPanel={showPanel}
+      setShowPanel={setShowPanel}
+      isIconVisible={isIconVisible}
+      isBarVisible={isBarVisible}
+      isBackToTTSVisible={isBackToTTSVisible}
+    />
   );
 };
 

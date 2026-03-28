@@ -16,6 +16,7 @@ interface SectionInfoProps {
   horizontalGap: number;
   contentInsets: Insets;
   gridInsets: Insets;
+  isVisible?: boolean;
 }
 
 const SectionInfo: React.FC<SectionInfoProps> = ({
@@ -28,6 +29,7 @@ const SectionInfo: React.FC<SectionInfoProps> = ({
   horizontalGap,
   contentInsets,
   gridInsets,
+  isVisible: _isVisibleProp,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();

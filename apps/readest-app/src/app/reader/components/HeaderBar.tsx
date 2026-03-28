@@ -35,6 +35,7 @@ interface HeaderBarProps {
   isHoveredAnim: boolean;
   gridInsets: Insets;
   screenInsets: Insets;
+  isVisible?: boolean;
   onCloseBook: (bookKey: string) => void;
   onGoToLibrary: () => void;
   onDropdownOpenChange?: (isOpen: boolean) => void;
@@ -47,6 +48,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   isHoveredAnim,
   gridInsets,
   screenInsets,
+  isVisible: isVisibleProp,
   onCloseBook,
   onGoToLibrary,
   onDropdownOpenChange,
@@ -132,7 +134,8 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
 
   const isHeaderCompact = headerWidth > 0 && headerWidth < 350;
   const insets = window.innerWidth < 640 ? screenInsets : gridInsets;
-  const isHeaderVisible = hoveredBookKey === bookKey || isDropdownOpen;
+  // Use isVisible prop from ReaderControls when provided, otherwise fall back to original logic
+  const isHeaderVisible = isVisibleProp ?? (hoveredBookKey === bookKey || isDropdownOpen);
   const trafficLightInHeader =
     appService?.hasTrafficLight && !trafficLightInFullscreen && !isSideBarVisible && isTopLeft;
 

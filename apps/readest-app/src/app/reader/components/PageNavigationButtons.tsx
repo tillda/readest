@@ -11,11 +11,13 @@ import { useBookDataStore } from '@/store/bookDataStore';
 interface PageNavigationButtonsProps {
   bookKey: string;
   isDropdownOpen: boolean;
+  isVisible?: boolean;
 }
 
 const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
   bookKey,
   isDropdownOpen,
+  isVisible: isVisibleProp,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -29,8 +31,10 @@ const PageNavigationButtons: React.FC<PageNavigationButtonsProps> = ({
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const currentPage = pageInfo?.current;
 
+  // Use isVisible prop from ReaderControls when provided, otherwise fall back to original logic
   const isPageNavigationButtonsVisible =
-    (hoveredBookKey === bookKey || isDropdownOpen) && viewSettings?.showPaginationButtons;
+    isVisibleProp ??
+    ((hoveredBookKey === bookKey || isDropdownOpen) && viewSettings?.showPaginationButtons);
 
   const handleGoLeftPage = useCallback(() => {
     viewPagination(view, viewSettings, 'left', 'page');

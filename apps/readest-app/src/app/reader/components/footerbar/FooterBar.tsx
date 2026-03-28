@@ -12,8 +12,6 @@ import { debounce } from '@/utils/debounce';
 import { viewPagination } from '../../hooks/usePagination';
 import MobileFooterBar from './MobileFooterBar';
 import DesktopFooterBar from './DesktopFooterBar';
-import TTSControl from '../tts/TTSControl';
-import { RSVPControl } from '../rsvp';
 
 const FooterBar: React.FC<FooterBarProps> = ({
   bookKey,
@@ -22,6 +20,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
   pageinfo,
   isHoveredAnim,
   gridInsets,
+  isVisible: isVisibleProp,
 }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
@@ -39,8 +38,9 @@ const FooterBar: React.FC<FooterBarProps> = ({
   const viewSettings = getViewSettings(bookKey);
 
   const [userSelectedTab, setUserSelectedTab] = useState('');
-  const actionTab = hoveredBookKey === bookKey ? userSelectedTab : '';
-  const isVisible = hoveredBookKey === bookKey;
+  // Use isVisible prop from ReaderControls when provided, otherwise fall back to original logic
+  const isVisible = isVisibleProp ?? hoveredBookKey === bookKey;
+  const actionTab = isVisible ? userSelectedTab : '';
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
@@ -249,8 +249,7 @@ const FooterBar: React.FC<FooterBarProps> = ({
         <div className='bg-base-100 pointer-events-none absolute bottom-0 left-0 hidden h-3 w-full sm:block' />
       )}
 
-      <TTSControl bookKey={bookKey} gridInsets={gridInsets} />
-      <RSVPControl bookKey={bookKey} gridInsets={gridInsets} />
+      {/* TTSControl and RSVPControl moved to ReaderControls parent component */}
     </>
   );
 };
