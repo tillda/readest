@@ -8,6 +8,7 @@ import { useBookDataStore } from '@/store/bookDataStore';
 import { useCommandPalette } from '@/components/command-palette';
 import { tauriHandleClose, tauriHandleToggleFullScreen, tauriQuitApp } from '@/utils/window';
 import { eventDispatcher } from '@/utils/event';
+import { setShortcutsDialogVisible } from '@/components/KeyboardShortcutsHelp';
 import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, ZOOM_STEP } from '@/services/constants';
 import { viewPagination } from './usePagination';
 import { getStyles } from '@/utils/style';
@@ -230,6 +231,34 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
     eventDispatcher.dispatch(viewState?.ttsEnabled ? 'tts-stop' : 'tts-speak', { bookKey });
   };
 
+  const ttsPlayPause = () => {
+    if (!sideBarBookKey) return false;
+    const viewState = getViewState(sideBarBookKey);
+    if (!viewState?.ttsEnabled) return false;
+    eventDispatcher.dispatch('tts-toggle-play', { bookKey: sideBarBookKey });
+    return true;
+  };
+
+  const ttsGoNextSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-forward', { bookKey: sideBarBookKey, byMark: true });
+  };
+
+  const ttsGoPreviousSentence = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: true });
+  };
+
+  const ttsGoNextParagraph = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-forward', { bookKey: sideBarBookKey, byMark: false });
+  };
+
+  const ttsGoPreviousParagraph = () => {
+    if (!sideBarBookKey) return;
+    eventDispatcher.dispatch('tts-backward', { bookKey: sideBarBookKey, byMark: false });
+  };
+
   const toggleBookmark = () => {
     if (!sideBarBookKey) return;
     eventDispatcher.dispatch('toggle-bookmark', { bookKey: sideBarBookKey });
@@ -280,6 +309,11 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onShowSearchBar: showSearchBar,
       onToggleFullscreen: toggleFullscreen,
       onToggleTTS: toggleTTS,
+      onTTSPlayPause: ttsPlayPause,
+      onTTSGoNextSentence: ttsGoNextSentence,
+      onTTSGoPreviousSentence: ttsGoPreviousSentence,
+      onTTSGoNextParagraph: ttsGoNextParagraph,
+      onTTSGoPreviousParagraph: ttsGoPreviousParagraph,
       onReloadPage: reloadPage,
       onCloseWindow: closeWindow,
       onQuitApp: quitApp,
@@ -301,6 +335,7 @@ const useBookShortcuts = ({ sideBarBookKey, bookKeys }: UseBookShortcutsProps) =
       onZoomOut: zoomOut,
       onResetZoom: resetZoom,
       onOpenCommandPalette: openCommandPalette,
+      onOpenShortcutsHelp: () => setShortcutsDialogVisible(true),
     },
     [sideBarBookKey, bookKeys],
   );
