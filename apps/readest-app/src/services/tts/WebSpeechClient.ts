@@ -16,6 +16,9 @@ interface TTSBoundaryEvent {
   error?: string;
 }
 
+// Approximate characters per second at rate 1.0 for Web Speech
+const WEB_SPEECH_CHARS_PER_SEC = 13;
+
 async function* speakWithMarks(
   marks: TTSMark[],
   originalMarks: TTSMark[],
@@ -26,6 +29,7 @@ async function* speakWithMarks(
   setSpeakingLang: (lang: string) => void,
   dispatchSpeakMark: (mark: TTSMark) => void,
   dispatchParagraphProgress: (mark: TTSMark) => void,
+  dispatchAudioPlaying: (duration: number) => void,
 ) {
   const synth = window.speechSynthesis;
   const utterance = new SpeechSynthesisUtterance();
@@ -44,6 +48,11 @@ async function* speakWithMarks(
       utterance.lang = voiceLang;
       setSpeakingLang(voiceLang);
     }
+
+    utterance.onstart = () => {
+      const estimatedDuration = mark.text.length / (WEB_SPEECH_CHARS_PER_SEC * getRate());
+      dispatchAudioPlaying(estimatedDuration);
+    };
 
     if (originalMarks.length > 1) {
       let lastTrackIdx = -1;
@@ -176,6 +185,7 @@ export class WebSpeechClient implements TTSClient {
       (lang) => (this.#speakingLang = lang),
       (mark) => this.controller?.dispatchSpeakMark(mark),
       (mark) => this.controller?.dispatchParagraphProgress(mark),
+      (duration) => this.controller?.dispatchAudioPlaying(duration),
     )) {
       if (signal.aborted) {
         console.log('TTS aborted');

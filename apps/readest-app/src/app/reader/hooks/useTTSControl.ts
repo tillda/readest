@@ -18,6 +18,7 @@ import { isCfiInLocation } from '@/utils/cfi';
 import { getLocale } from '@/utils/misc';
 import { invokeUseBackgroundAudio } from '@/utils/bridge';
 import { estimateTTSTime } from '@/utils/ttsTime';
+import { calculatePageSplitFraction } from '@/utils/ttsPageSplit';
 import { useTTSMediaSession } from './useTTSMediaSession';
 
 interface UseTTSControlProps {
@@ -49,6 +50,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
 
   const followingTTSLocationRef = useRef(true);
   const sectionChangingTimestampRef = useRef(0);
+  const pageTurnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ttsControllerRef = useRef<TTSController | null>(null);
   const [ttsController, setTtsController] = useState<TTSController | null>(null);
   const [ttsClientsInited, setTtsClientsInitialized] = useState(false);
@@ -214,13 +216,42 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
       }
     };
 
+    const clearPageTurnTimer = () => {
+      if (pageTurnTimerRef.current) {
+        clearTimeout(pageTurnTimerRef.current);
+        pageTurnTimerRef.current = null;
+      }
+    };
+
+    const handleAudioPlaying = (e: Event) => {
+      clearPageTurnTimer();
+      const { duration } = (e as CustomEvent<{ duration: number }>).detail;
+      const view = getView(bookKey);
+      if (!view || view.renderer.scrolled || view.isFixedLayout) return;
+
+      const range = view.tts?.getLastRange() as Range | null;
+      if (!range) return;
+
+      const fraction = calculatePageSplitFraction(range, view.renderer);
+      if (fraction === null || fraction >= 1) return;
+
+      const delay = duration * fraction * 1000;
+      pageTurnTimerRef.current = setTimeout(() => {
+        pageTurnTimerRef.current = null;
+        view.next();
+      }, delay);
+    };
+
     ttsController.addEventListener('tts-need-auth', handleNeedAuth);
     ttsController.addEventListener('tts-speak-mark', handleSpeakMark);
     ttsController.addEventListener('tts-highlight-mark', handleHighlightMark);
+    ttsController.addEventListener('tts-audio-playing', handleAudioPlaying);
     return () => {
+      clearPageTurnTimer();
       ttsController.removeEventListener('tts-need-auth', handleNeedAuth);
       ttsController.removeEventListener('tts-speak-mark', handleSpeakMark);
       ttsController.removeEventListener('tts-highlight-mark', handleHighlightMark);
+      ttsController.removeEventListener('tts-audio-playing', handleAudioPlaying);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ttsController, bookKey]);
@@ -377,6 +408,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // handleStop (defined before handleTTSSpeak/handleTTSStop which reference it)
   const handleStop = useCallback(
     async (bookKey: string) => {
+      if (pageTurnTimerRef.current) {
+        clearTimeout(pageTurnTimerRef.current);
+        pageTurnTimerRef.current = null;
+      }
       const ttsController = ttsControllerRef.current;
       if (ttsController) {
         await ttsController.shutdown();
@@ -535,6 +570,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
     }
 
     if (isPlaying) {
+      if (pageTurnTimerRef.current) {
+        clearTimeout(pageTurnTimerRef.current);
+        pageTurnTimerRef.current = null;
+      }
       setIsPlaying(false);
       setIsPaused(true);
       await ttsController.pause();
@@ -561,6 +600,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   }, [isPlaying, isPaused, mediaSessionRef, bookKey, getView, getViewSettings]);
 
   const handleBackward = useCallback(async (byMark = false) => {
+    if (pageTurnTimerRef.current) {
+      clearTimeout(pageTurnTimerRef.current);
+      pageTurnTimerRef.current = null;
+    }
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       await ttsController.backward(byMark);
@@ -568,6 +611,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   }, []);
 
   const handleForward = useCallback(async (byMark = false) => {
+    if (pageTurnTimerRef.current) {
+      clearTimeout(pageTurnTimerRef.current);
+      pageTurnTimerRef.current = null;
+    }
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       await ttsController.forward(byMark);
@@ -575,6 +622,10 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   }, []);
 
   const handlePause = useCallback(async () => {
+    if (pageTurnTimerRef.current) {
+      clearTimeout(pageTurnTimerRef.current);
+      pageTurnTimerRef.current = null;
+    }
     const ttsController = ttsControllerRef.current;
     if (ttsController) {
       setIsPlaying(false);

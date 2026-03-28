@@ -602,6 +602,10 @@ export class TTSController extends EventTarget {
     }
   }
 
+  dispatchAudioPlaying(duration: number) {
+    this.dispatchEvent(new CustomEvent('tts-audio-playing', { detail: { duration } }));
+  }
+
   dispatchParagraphProgress(mark: TTSMark) {
     if (!mark || mark.name === '-1') return;
     try {

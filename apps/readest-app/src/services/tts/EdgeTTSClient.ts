@@ -212,6 +212,9 @@ export class EdgeTTSClient implements TTSClient {
               if (this.appService?.isLinuxApp) {
                 audio.playbackRate = this.#rate;
               }
+              if (isFinite(audio.duration) && audio.duration > 0) {
+                this.controller?.dispatchAudioPlaying(audio.duration / this.#rate);
+              }
             })
             .catch((err) => {
               cleanUp();

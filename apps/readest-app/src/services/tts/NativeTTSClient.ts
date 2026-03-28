@@ -5,6 +5,9 @@ import { collapseMarksForParagraphMode, parseSSMLMarks } from '@/utils/ssml';
 import { stubTranslation as _ } from '@/utils/misc';
 import { TTSClient, TTSMessageEvent } from './TTSClient';
 import { TTSGranularity, TTSMark, TTSVoice, TTSVoicesGroup } from './types';
+
+// Approximate characters per second at rate 1.0 for native TTS
+const NATIVE_TTS_CHARS_PER_SEC = 13;
 import { TTSUtils } from './TTSUtils';
 import { TTSController } from './TTSController';
 
@@ -121,6 +124,10 @@ export class NativeTTSClient implements TTSClient {
         resolver: null,
         finished: false,
       });
+
+      // Estimate duration for page-turn scheduling
+      const estimatedDuration = mark.text.length / (NATIVE_TTS_CHARS_PER_SEC * this.#rate);
+      this.controller?.dispatchAudioPlaying(estimatedDuration);
 
       const abortHandler = () => {
         const utteranceData = this.#activeUtterances.get(utteranceId);
