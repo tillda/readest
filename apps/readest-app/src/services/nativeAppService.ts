@@ -420,9 +420,9 @@ export class NativeAppService extends BaseAppService {
   override isEink = Boolean(window.__READEST_IS_EINK);
   override hasTrafficLight = OS_TYPE === 'macos';
   override hasWindow = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasWindowBar = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
+  override hasWindowBar = OS_TYPE === 'macos';
   override hasContextMenu = !(OS_TYPE === 'ios' || OS_TYPE === 'android');
-  override hasRoundedWindow = OS_TYPE === 'linux';
+  override hasRoundedWindow = false;
   override hasSafeAreaInset = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasHaptics = OS_TYPE === 'ios' || OS_TYPE === 'android';
   override hasUpdater =

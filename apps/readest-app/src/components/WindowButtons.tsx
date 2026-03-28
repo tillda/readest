@@ -199,7 +199,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         className,
       )}
     >
-      {showMinimize && appService?.hasWindowBar && (
+      {showMinimize && appService?.hasWindowBar && !appService?.hasTrafficLight && (
         <WindowButton onClick={handleMinimize} label={_('Minimize')} id='titlebar-minimize'>
           <svg xmlns='http://www.w3.org/2000/svg' width='1em' height='1em' viewBox='0 0 24 24'>
             <path fill='currentColor' d='M20 14H4v-2h16' />
@@ -207,7 +207,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         </WindowButton>
       )}
 
-      {showMaximize && appService?.hasWindowBar && (
+      {showMaximize && appService?.hasWindowBar && !appService?.hasTrafficLight && (
         <WindowButton
           onClick={handleMaximize}
           label={_('Maximize or Restore')}
@@ -219,7 +219,7 @@ const WindowButtons: React.FC<WindowButtonsProps> = ({
         </WindowButton>
       )}
 
-      {showClose && (appService?.hasWindowBar || onClose) && (
+      {showClose && ((appService?.hasWindowBar && !appService?.hasTrafficLight) || onClose) && (
         <WindowButton
           onClick={handleClose}
           label={closeButtonLabel || _('Close')}
