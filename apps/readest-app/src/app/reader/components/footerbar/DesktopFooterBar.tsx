@@ -37,6 +37,15 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   const template = progressStyle === 'fraction' ? '{current} / {total}' : '{percent}%';
   const pageInfo = bookData?.isFixedLayout ? section : pageinfo;
   const progressInfo = formatProgress(pageInfo?.current, pageInfo?.total, template, false, 'en', 0);
+  // Compute min-width from the widest possible text (when current = total)
+  const maxProgressText = formatProgress(
+    (pageInfo?.total ?? 1) - 1,
+    pageInfo?.total,
+    template,
+    false,
+    'en',
+    0,
+  );
 
   const rangeInputRef = useRef<HTMLInputElement>(null);
 
@@ -116,7 +125,8 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         <span
           title={_('Reading Progress')}
           aria-label={`${_('Reading Progress')}: ${Math.round(progressFraction * 100)}%`}
-          className='mx-2 text-nowrap text-center text-sm'
+          className='mx-2 text-nowrap text-center text-sm tabular-nums'
+          style={{ minWidth: maxProgressText ? `${maxProgressText.length}ch` : undefined }}
         >
           <span aria-hidden='true'>{progressInfo}</span>
         </span>
@@ -127,9 +137,10 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         className='text-base-content mx-2 min-w-0 flex-1'
         min={0}
         max={100}
+        step='any'
         aria-label={_('Jump to Location')}
         value={progressValue}
-        onChange={(e) => handleProgressChange(parseInt(e.target.value, 10))}
+        onChange={(e) => handleProgressChange(parseFloat(e.target.value))}
       />
       <Button
         icon={<FaHeadphones className={viewState?.ttsEnabled ? 'text-blue-500' : ''} />}

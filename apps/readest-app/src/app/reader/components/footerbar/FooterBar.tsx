@@ -51,12 +51,18 @@ const FooterBar: React.FC<FooterBarProps> = ({
   );
 
   const progressValid = !!progressInfo && progressInfo.total > 0 && progressInfo.current >= 0;
+  const isFixedLayout = bookFormat === 'PDF' || bookData?.isFixedLayout;
   const progressFraction = useMemo(() => {
+    // Use smooth byte-fraction for reflowable books (moves with every page turn)
+    if (progressValid && !isFixedLayout && progress?.fraction != null) {
+      return Math.min(progress.fraction, 1);
+    }
+    // Fallback to LOC-based fraction for PDF/fixed-layout
     if (progressValid && progressInfo.total > 0 && progressInfo.current >= 0) {
       return (progressInfo.current + 1) / progressInfo.total;
     }
     return 0;
-  }, [progressValid, progressInfo]);
+  }, [progressValid, isFixedLayout, progress?.fraction, progressInfo]);
 
   const handleProgressChange = useMemo(
     () =>

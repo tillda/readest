@@ -309,6 +309,7 @@ export interface ViewSettings
 
 export interface BookProgress {
   location: string;
+  fraction?: number;
   sectionHref: string;
   sectionLabel: string;
   section: PageInfo;

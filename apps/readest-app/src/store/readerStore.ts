@@ -63,6 +63,7 @@ interface ReaderStore {
     pageinfo: PageInfo,
     timeinfo: TimeInfo,
     range: Range,
+    fraction?: number,
   ) => void;
   getProgress: (key: string) => BookProgress | null;
   setView: (key: string, view: FoliateView) => void;
@@ -324,6 +325,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
     pageinfo: PageInfo,
     timeinfo: TimeInfo,
     range: Range,
+    fraction?: number,
   ) =>
     set((state) => {
       const id = key.split('-')[0]!;
@@ -391,6 +393,7 @@ export const useReaderStore = create<ReaderStore>((set, get) => ({
             progress: {
               ...viewState.progress,
               location,
+              fraction,
               sectionHref: tocItem?.href,
               sectionLabel: tocItem?.label,
               section,

@@ -142,6 +142,7 @@ const FoliateViewer: React.FC<{
       pageInfo,
       detail.time,
       detail.range,
+      detail.startFraction as number | undefined,
     );
   };
 
