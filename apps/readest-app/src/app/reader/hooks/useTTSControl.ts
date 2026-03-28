@@ -517,7 +517,22 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
   // Playback callbacks
   const handleTogglePlay = useCallback(async () => {
     const ttsController = ttsControllerRef.current;
-    if (!ttsController) return;
+
+    if (!ttsController) {
+      // Controller was shut down — restart from saved TTS location
+      const view = getView(bookKey);
+      const vs = getViewSettings(bookKey);
+      const ttsLocation = vs?.ttsLocation;
+      if (view && ttsLocation) {
+        const { anchor, index } = view.resolveCFI(ttsLocation);
+        const content = view.renderer.getContents().find((x) => x.index === index);
+        const range = content ? anchor(content.doc) : null;
+        eventDispatcher.dispatch('tts-speak', { bookKey, range, index });
+      } else {
+        eventDispatcher.dispatch('tts-speak', { bookKey });
+      }
+      return;
+    }
 
     if (isPlaying) {
       setIsPlaying(false);
@@ -543,7 +558,7 @@ export const useTTSControl = ({ bookKey, onRequestHidePanel }: UseTTSControlProp
         mediaSession.playbackState = isPlaying ? 'paused' : 'playing';
       }
     }
-  }, [isPlaying, isPaused, mediaSessionRef]);
+  }, [isPlaying, isPaused, mediaSessionRef, bookKey, getView, getViewSettings]);
 
   const handleBackward = useCallback(async (byMark = false) => {
     const ttsController = ttsControllerRef.current;
