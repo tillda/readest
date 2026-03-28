@@ -82,7 +82,7 @@ const LibraryHeader: React.FC<LibraryHeaderProps> = ({
     debouncedUpdateQueryParam(newQuery);
   };
 
-  const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
+  const windowButtonVisible = !!appService?.hasWindowBar;
   const currentBooksCount = currentBookshelf.reduce(
     (acc, item) => acc + ('books' in item ? item.books.length : 1),
     0,

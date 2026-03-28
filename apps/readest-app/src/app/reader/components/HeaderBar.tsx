@@ -56,11 +56,11 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const _ = useTranslation();
   const { envConfig, appService } = useEnv();
   const { settings } = useSettingsStore();
-  const { isTrafficLightVisible } = useTrafficLight();
-  const { trafficLightInFullscreen, setTrafficLightVisibility } = useTrafficLightStore();
+  useTrafficLight();
+  const { trafficLightInFullscreen } = useTrafficLightStore();
   const { bookKeys, hoveredBookKey } = useReaderStore();
   const { isDarkMode, systemUIVisible, statusBarHeight } = useThemeStore();
-  const { isSideBarVisible, getIsSideBarVisible } = useSidebarStore();
+  const { isSideBarVisible } = useSidebarStore();
   const { getView, getViewSettings, setHoveredBookKey } = useReaderStore();
   const viewSettings = getViewSettings(bookKey);
 
@@ -70,7 +70,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const iconSize16 = useResponsiveSize(16);
   const iconSize18 = useResponsiveSize(18);
   const headerRef = useRef<HTMLDivElement>(null);
-  const windowButtonVisible = appService?.hasWindowBar && !isTrafficLightVisible;
+  const windowButtonVisible = !!appService?.hasWindowBar;
 
   const docs = view?.renderer.getContents() ?? [];
   const pointerInDoc = docs.some(({ doc }) => doc?.body?.style.cursor === 'pointer');
@@ -96,21 +96,6 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
     if (viewSettings?.annotationQuickAction === action) action = null;
     saveViewSettings(envConfig, bookKey, 'annotationQuickAction', action, false, true);
   };
-
-  useEffect(() => {
-    if (!appService?.hasTrafficLight) return;
-
-    if (hoveredBookKey === bookKey && isTopLeft) {
-      setTrafficLightVisibility(true, { x: 10, y: 20 });
-    } else if (!hoveredBookKey) {
-      setTimeout(() => {
-        if (!getIsSideBarVisible()) {
-          setTrafficLightVisibility(false);
-        }
-      }, 100);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appService, hoveredBookKey]);
 
   useEffect(() => {
     const header = headerRef.current;

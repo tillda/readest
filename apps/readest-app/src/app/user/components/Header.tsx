@@ -3,7 +3,6 @@ import { useRef } from 'react';
 import { IoArrowBack } from 'react-icons/io5';
 import { useEnv } from '@/context/EnvContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import WindowButtons from '@/components/WindowButtons';
 
 interface ProfileHeaderProps {
@@ -13,7 +12,6 @@ interface ProfileHeaderProps {
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onGoBack }) => {
   const _ = useTranslation();
   const { appService } = useEnv();
-  const { isTrafficLightVisible } = useTrafficLightStore();
   const headerRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -32,15 +30,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onGoBack }) => {
         <IoArrowBack className='text-base-content' />
       </button>
 
-      {appService?.hasWindowBar && (
-        <WindowButtons
-          headerRef={headerRef}
-          showMinimize={!isTrafficLightVisible}
-          showMaximize={!isTrafficLightVisible}
-          showClose={!isTrafficLightVisible}
-          onClose={onGoBack}
-        />
-      )}
+      {appService?.hasWindowBar && <WindowButtons headerRef={headerRef} onClose={onGoBack} />}
     </div>
   );
 };

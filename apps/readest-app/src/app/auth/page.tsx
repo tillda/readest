@@ -16,7 +16,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { useThemeStore } from '@/store/themeStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useTrafficLightStore } from '@/store/trafficLightStore';
 import { getBaseUrl, isTauriAppPlatform } from '@/services/environment';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { start, cancel, onUrl, onInvalidUrl } from '@fabianlars/tauri-plugin-oauth';
@@ -67,7 +66,6 @@ export default function AuthPage() {
   const { login } = useAuth();
   const { envConfig, appService } = useEnv();
   const { isDarkMode, safeAreaInsets, isRoundedWindow } = useThemeStore();
-  const { isTrafficLightVisible } = useTrafficLightStore();
   const { settings, setSettings, saveSettings } = useSettingsStore();
   const [port, setPort] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -374,13 +372,7 @@ export default function AuthPage() {
           </button>
 
           {appService?.hasWindowBar && (
-            <WindowButtons
-              headerRef={headerRef}
-              showMinimize={!isTrafficLightVisible}
-              showMaximize={!isTrafficLightVisible}
-              showClose={!isTrafficLightVisible}
-              onClose={handleGoBack}
-            />
+            <WindowButtons headerRef={headerRef} onClose={handleGoBack} />
           )}
         </div>
         <div
