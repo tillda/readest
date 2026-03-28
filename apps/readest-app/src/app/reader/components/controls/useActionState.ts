@@ -41,7 +41,6 @@ export function useActionState({
         ttsClientsInited: ttsState.ttsClientsInited,
         showTTSBar: ttsState.showTTSBar,
         showBackToTTSLocation: ttsState.showBackToTTSLocation,
-        showPanel: ttsState.showPanel,
       },
       prefs: {
         showHeader: viewSettings?.showHeader ?? true,

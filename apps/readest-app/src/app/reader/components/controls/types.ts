@@ -20,7 +20,6 @@ export interface ActionState {
     ttsClientsInited: boolean;
     showTTSBar: boolean; // user preference: sticky bar enabled
     showBackToTTSLocation: boolean;
-    showPanel: boolean; // TTS popup panel open
   };
 
   // User preferences (persisted ViewSettings)
@@ -63,7 +62,6 @@ export interface ControlVisibility {
   headerVisible: boolean;
   footerVisible: boolean;
   progressBarVisible: boolean;
-  ttsIconVisible: boolean;
   ttsBarVisible: boolean;
   backToTTSVisible: boolean;
   pageNavButtonsVisible: boolean;
@@ -81,5 +79,4 @@ export interface TTSStateForControls {
   ttsClientsInited: boolean;
   showTTSBar: boolean;
   showBackToTTSLocation: boolean;
-  showPanel: boolean;
 }

@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { FaHeadphones } from 'react-icons/fa6';
 import { RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { RiArrowLeftDoubleLine, RiArrowRightDoubleLine } from 'react-icons/ri';
@@ -17,15 +16,13 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
   progressValid,
   progressFraction,
   navigationHandlers,
-  onSpeakText,
 }) => {
   const _ = useTranslation();
-  const { hoveredBookKey, getView, getViewState, getProgress, getViewSettings } = useReaderStore();
+  const { hoveredBookKey, getView, getProgress, getViewSettings } = useReaderStore();
   const { getBookData } = useBookDataStore();
   const view = getView(bookKey);
   const bookData = getBookData(bookKey);
   const progress = getProgress(bookKey);
-  const viewState = getViewState(bookKey);
   const viewSettings = getViewSettings(bookKey);
   const progressStyle = viewSettings?.progressStyle || 'percentage';
 
@@ -141,11 +138,6 @@ const DesktopFooterBar: React.FC<FooterBarChildProps> = ({
         aria-label={_('Jump to Location')}
         value={progressValue}
         onChange={(e) => handleProgressChange(parseFloat(e.target.value))}
-      />
-      <Button
-        icon={<FaHeadphones className={viewState?.ttsEnabled ? 'text-blue-500' : ''} />}
-        onClick={onSpeakText!}
-        label={_('Speak')}
       />
       {!viewSettings?.showPaginationButtons && (
         <Button

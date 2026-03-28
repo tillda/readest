@@ -8,7 +8,6 @@ import {
   MdSkipPrevious,
   MdSkipNext,
 } from 'react-icons/md';
-import { Insets } from '@/types/misc';
 import { useEnv } from '@/context/EnvContext';
 import { useReaderStore } from '@/store/readerStore';
 import { useResponsiveSize } from '@/hooks/useResponsiveSize';
@@ -20,7 +19,6 @@ type TTSBarProps = {
   onTogglePlay: () => void;
   onBackward: (byMark: boolean) => void;
   onForward: (byMark: boolean) => void;
-  gridInsets: Insets;
   isVisible?: boolean;
 };
 
@@ -30,7 +28,6 @@ const TTSBar = ({
   onTogglePlay,
   onBackward,
   onForward,
-  gridInsets,
   isVisible: isVisibleProp,
 }: TTSBarProps) => {
   const _ = useTranslation();
@@ -46,12 +43,11 @@ const TTSBar = ({
   return (
     <div
       className={clsx(
-        'bg-base-100 absolute bottom-0 z-40',
-        'inset-x-0 mx-auto flex w-full justify-center sm:w-fit',
+        'bg-base-100',
+        'mx-auto flex w-full justify-center sm:w-fit',
         'transition-opacity duration-300',
         isVisible ? `pointer-events-auto opacity-100` : `pointer-events-none opacity-0`,
       )}
-      style={{ paddingBottom: appService?.hasSafeAreaInset ? `${gridInsets.bottom * 0.33}px` : 0 }}
       onMouseEnter={() => !appService?.isMobile && setHoveredBookKey('')}
       onTouchStart={() => !appService?.isMobile && setHoveredBookKey('')}
     >

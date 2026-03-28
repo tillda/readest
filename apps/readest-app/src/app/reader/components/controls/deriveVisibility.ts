@@ -9,7 +9,6 @@ export function deriveVisibility(_state: ActionState): ControlVisibility {
     headerVisible: true,
     footerVisible: true,
     progressBarVisible: true,
-    ttsIconVisible: true,
     ttsBarVisible: true,
     backToTTSVisible: true,
     pageNavButtonsVisible: true,
@@ -41,7 +40,6 @@ export function deriveVisibilityOriginal(state: ActionState): ControlVisibility 
     headerVisible: controlsActive && state.prefs.showHeader && barsEnabled,
     footerVisible: controlsActive && state.prefs.showFooter && barsEnabled,
     progressBarVisible: state.prefs.showFooter && barsEnabled,
-    ttsIconVisible: state.tts.showPanel || state.tts.isActive,
     ttsBarVisible:
       state.tts.isActive && state.tts.showTTSBar && state.tts.ttsClientsInited && !controlsActive,
     backToTTSVisible: state.tts.showBackToTTSLocation,
