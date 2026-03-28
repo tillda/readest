@@ -610,6 +610,11 @@ const FoliateViewer: React.FC<{
     viewRef.current?.renderer.setAttribute('gap', `${viewSettings.gapPercent}%`);
     if (viewSettings.scrolled) {
       viewRef.current?.renderer.setAttribute('flow', 'scrolled');
+      if (viewSettings.noContinuousScroll) {
+        viewRef.current?.renderer.setAttribute('no-continuous-scroll', '');
+      } else {
+        viewRef.current?.renderer.removeAttribute('no-continuous-scroll');
+      }
     }
   };
 
@@ -695,6 +700,7 @@ const FoliateViewer: React.FC<{
     viewSettings?.showBarsOnScroll,
     viewSettings?.showMarginsOnScroll,
     viewSettings?.scrolled,
+    viewSettings?.noContinuousScroll,
     viewState?.ttsEnabled,
   ]);
 
