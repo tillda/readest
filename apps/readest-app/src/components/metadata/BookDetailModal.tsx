@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Book } from '@/types/book';
 import { BookMetadata } from '@/libs/document';
 import { useEnv } from '@/context/EnvContext';
+import { getLocalBookFilename } from '@/utils/book';
 import { useThemeStore } from '@/store/themeStore';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useMetadataEdit } from './useMetadataEdit';
@@ -54,6 +55,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
   const [editMode, setEditMode] = useState(false);
   const [bookMeta, setBookMeta] = useState<BookMetadata | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  const [filePath, setFilePath] = useState<string | null>(null);
 
   // Initialize metadata edit hook
   const {
@@ -103,6 +105,8 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
         setBookMeta(details);
         const size = await appService.getBookFileSize(book);
         setFileSize(size);
+        const resolved = await appService.resolveFilePath(getLocalBookFilename(book), 'Books');
+        setFilePath(resolved);
       } finally {
       }
     };
@@ -223,6 +227,7 @@ const BookDetailModal: React.FC<BookDetailModalProps> = ({
                 book={book}
                 metadata={bookMeta}
                 fileSize={fileSize}
+                filePath={filePath}
                 onEdit={handleBookMetadataUpdate ? handleEditMetadata : undefined}
                 onDelete={handleBookDelete ? handleDelete : undefined}
                 onDeleteCloudBackup={

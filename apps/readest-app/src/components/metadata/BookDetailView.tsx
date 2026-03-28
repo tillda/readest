@@ -32,6 +32,7 @@ interface BookDetailViewProps {
   book: Book;
   metadata: BookMetadata | null;
   fileSize: number | null;
+  filePath?: string | null;
   onEdit?: () => void;
   onDelete?: () => void;
   onDeleteCloudBackup?: () => void;
@@ -45,6 +46,7 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
   book,
   metadata,
   fileSize,
+  filePath,
   onEdit,
   onDelete,
   onDeleteCloudBackup,
@@ -222,6 +224,14 @@ const BookDetailView: React.FC<BookDetailViewProps> = ({
                     {metadata?.identifier || _('Unknown')}
                   </p>
                 </div>
+                {filePath && (
+                  <div className='col-span-2 overflow-hidden sm:col-span-3'>
+                    <span className='font-bold'>{_('File')}</span>
+                    <p className='text-neutral-content line-clamp-2 break-all text-sm'>
+                      {filePath}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
